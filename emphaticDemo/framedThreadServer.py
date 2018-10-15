@@ -2,6 +2,7 @@
 import sys, os, socket, params, time
 from threading import Thread
 from framedSock import FramedStreamSock
+from threading import Lock
 
 switchesVarDefaults = (
     (('-l', '--listenPort') ,'listenPort', 50001),
@@ -30,18 +31,26 @@ class ServerThread(Thread):
         self.fsock, self.debug = FramedStreamSock(sock, debug), debug
         self.start()
     def run(self):
-        while True:
-            msg = self.fsock.receivemsg()
-            if not msg:
-                if self.debug: print(self.fsock, "server thread done")
-                return
-            requestNum = ServerThread.requestCount
-            time.sleep(0.001)
-            ServerThread.requestCount = requestNum + 1
-            msg = ("%s! (%d)" % (msg, requestNum)).encode()
-            self.fsock.sendmsg(msg)
-
+        print("new thread handling connection from", addr)
+        lock.acquire()
+        try:
+            with open('FileRequest'+str(ServerThread.requestCount)+'.txt', "wb") as f:
+                while True:
+                    msg = self.fsock.receivemsg()
+                    if not msg:
+                        if self.debug: print(self.fsock, "server thread done")
+                        return
+                    requestNum = ServerThread.requestCount
+                    # time.sleep(0.001)
+                    ServerThread.requestCount = requestNum + 1
+                    f.write(msg+bytes('\n','utf-8'))
+                    msg = ("%s! (%d)" % (msg, requestNum)).encode()
+                    self.fsock.sendmsg(msg)
+                f.close()
+        finally:
+            lock.release()
 
 while True:
     sock, addr = lsock.accept()
+    lock = Lock()
     ServerThread(sock, debug)

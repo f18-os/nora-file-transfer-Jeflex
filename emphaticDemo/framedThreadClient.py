@@ -31,7 +31,7 @@ except:
     sys.exit(1)
 
 class ClientThread(Thread):
-    def __init__(self, serverHost, serverPort, debug):
+    def __init__(self, serverHost, serverPort, debug, file):
         Thread.__init__(self, daemon=False)
         self.serverHost, self.serverPort, self.debug = serverHost, serverPort, debug
         self.start()
@@ -62,14 +62,24 @@ class ClientThread(Thread):
 
        fs = FramedStreamSock(s, debug=debug)
 
+       with open(file, 'rb') as f:
+           lines = [line.rstrip('\n') for line in open(file)]
+           # print(lines)
+           for line in lines:
+               l = bytes(line,'utf-8')
+               fs.sendmsg(l)
+               # print(l)
+               print("received:", fs.receivemsg())
+       f.close()
+       # print("sending hello world")
+       # fs.sendmsg(b"hello world")
+       # print("received:", fs.receivemsg())
+       #
+       # fs.sendmsg(b"hello world")
+       # print("received:", fs.receivemsg())
 
-       print("sending hello world")
-       fs.sendmsg(b"hello world")
-       print("received:", fs.receivemsg())
-
-       fs.sendmsg(b"hello world")
-       print("received:", fs.receivemsg())
-
-for i in range(100):
-    ClientThread(serverHost, serverPort, debug)
-
+# for i in range(100):
+#     ClientThread(serverHost, serverPort, debug)
+file = input("What file would you like to send to the server? ")
+print("Attempting to send file.")
+ClientThread(serverHost, serverPort, debug, file)
