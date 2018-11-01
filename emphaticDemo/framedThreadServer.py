@@ -32,7 +32,7 @@ class ServerThread(Thread):
         self.start()
     def run(self):
         print("new thread handling connection from", addr)
-        lock.acquire()
+
         try:
             with open('FileRequest'+str(ServerThread.requestCount)+'.txt', "wb") as f:
                 while True:
@@ -43,12 +43,13 @@ class ServerThread(Thread):
                     requestNum = ServerThread.requestCount
                     # time.sleep(0.001)
                     ServerThread.requestCount = requestNum + 1
+                    lock.acquire()
                     f.write(msg+bytes('\n','utf-8'))
+                    lock.release()
                     msg = ("%s! (%d)" % (msg, requestNum)).encode()
                     self.fsock.sendmsg(msg)
                 f.close()
         finally:
-            lock.release()
 
 while True:
     sock, addr = lsock.accept()
